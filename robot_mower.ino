@@ -3,86 +3,19 @@
 #include <SPI.h>
 #include <Servo.h>
 
+#include "bluetooth.h"
+#include "constants.h"
 #include "packet.h"
 
-#define BLUETOOTH_STATE_PIN   3
 
-#define BLADE_PIN             11
-#define LEFT_WHEEL_PIN        10
-#define RIGHT_WHEEL_PIN        9
-#define WHEEL_OFF_ANGLE       90
-
-#define bt Serial
-
+bt::Bluetooth* bluetooth;
 Servo left_wheel, right_wheel, blade;
 bool blade_spinning = false;
 
-Timer connection_timer;
-
-volatile bool bluetooth_connected = false;
-volatile bool receiving_packets = false;
-volatile int last_packet_received = 0;
-volatile int current_packet_received = 1;
-
 void shutdown();
-
-void bluetooth_connection_changed()
-{
-    bluetooth_connected = digitalRead(BLUETOOTH_STATE_PIN);
-}
-
-bool check_packets_received(void*)
-{
-    receiving_packets = last_packet_received != current_packet_received;
-    last_packet_received = current_packet_received;
-    return true;
-}
-
-bool is_connected()
-{
-    return bluetooth_connected && receiving_packets;
-}
-
-void check_connection()
-{
-    connection_timer.tick();
-    if (!is_connected())
-        shutdown();
-}
-
-void wait_packet_available()
-{
-    auto available = false;
-    while (!available){
-        check_connection();
-        for (auto byte_read = bt.read(); byte_read != 0xaa; byte_read = bt.read())
-            if (byte_read == -1)
-                check_connection();
-        while (!bt.available())
-            check_connection();
-        if (bt.read() != 0x55)
-            continue;
-        while (bt.available() < sizeof(RadioPacket))
-            check_connection();
-        available = true;
-    }
-    current_packet_received++;
-}
-
-RadioPacket read_packet()
-{
-    wait_packet_available();
-    RadioPacket packet;
-    bt.readBytes(reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
-    return packet;
-}
 
 void setup()
 {
-
-    pinMode(BLUETOOTH_STATE_PIN, INPUT);
-    attachInterrupt(digitalPinToInterrupt(BLUETOOTH_STATE_PIN), &bluetooth_connection_changed, CHANGE);
-
     analogWrite(LEFT_WHEEL_PIN, WHEEL_OFF_ANGLE);
     analogWrite(RIGHT_WHEEL_PIN, WHEEL_OFF_ANGLE);
 
@@ -91,11 +24,7 @@ void setup()
     blade.attach(BLADE_PIN, 1000, 2000);
     blade.write(0);
 
-    connection_timer = timer_create_default();
-    connection_timer.every(500, check_packets_received);
-
-    bt.begin(115200);
-    while (!bt || !bluetooth_connected) {}
+    bluetooth = new bt::Bluetooth(shutdown);
 }
 
 void shutdown()
@@ -146,6 +75,6 @@ void handle_packet(const RadioPacket& packet)
 
 void loop()
 {
-    auto packet = read_packet();
+    auto packet = bluetooth->read_packet();
     handle_packet(packet);
 }
