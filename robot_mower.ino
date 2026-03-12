@@ -1,29 +1,25 @@
 #include <Arduino.h>
-#include <arduino-timer.h>
-#include <SPI.h>
 #include <Servo.h>
 
 #include "bluetooth.h"
 #include "constants.h"
 #include "packet.h"
+#include "wheel.h"
 
 
 bt::Bluetooth* bluetooth;
-Servo left_wheel, right_wheel, blade;
+Wheel* left_wheel, * right_wheel;
+Servo blade;
 bool blade_spinning = false;
 
 void shutdown();
 
 void setup()
 {
-    analogWrite(LEFT_WHEEL_PIN, WHEEL_OFF_ANGLE);
-    analogWrite(RIGHT_WHEEL_PIN, WHEEL_OFF_ANGLE);
-
-    left_wheel.attach(LEFT_WHEEL_PIN, 1000, 2000);
-    right_wheel.attach(RIGHT_WHEEL_PIN, 1000, 2000);
     blade.attach(BLADE_PIN, 1000, 2000);
     blade.write(0);
-
+    left_wheel = new Wheel(LEFT_WHEEL_PIN);
+    right_wheel = new Wheel(RIGHT_WHEEL_PIN);
     bluetooth = new bt::Bluetooth(shutdown);
 }
 
@@ -31,8 +27,8 @@ void shutdown()
 {
     blade_spinning = false;
     blade.write(0);
-    left_wheel.write(WHEEL_OFF_ANGLE);
-    right_wheel.write(WHEEL_OFF_ANGLE);
+    left_wheel->shutdown();
+    right_wheel->shutdown();
 }
 
 void handle_blade(bool state_changed)
@@ -52,23 +48,12 @@ void handle_blade(bool state_changed)
         blade_speed = 0u;
     blade.write(blade_speed);
 }
-
-int get_motor_speed(int16_t stick_value)
-{
-    const auto dead_zone_threshold = 10;
-    auto value = map(stick_value, -255, 255, 0, 180);
-    if (value > (WHEEL_OFF_ANGLE - dead_zone_threshold)
-        && value < (WHEEL_OFF_ANGLE + dead_zone_threshold))
-        return WHEEL_OFF_ANGLE;
-    return value;
 }
 
 void handle_packet(const RadioPacket& packet)
 {
-    auto left = get_motor_speed(packet.left_y);
-    auto right = get_motor_speed(packet.right_y);
-    left_wheel.write(left);
-    right_wheel.write(right);
+    left_wheel->set_speed(packet.left_y);
+    right_wheel->set_speed(packet.right_y);
 
     handle_blade(packet.right_clicked);
 }
