@@ -18,7 +18,9 @@ namespace bt
         void (*_shutdown) ();
 
     public:
-        Bluetooth(void (*shutdown)());
+        Bluetooth() {}
+
+        void begin(void (*shutdown)());
 
         bool is_connected();
         void check_connection();

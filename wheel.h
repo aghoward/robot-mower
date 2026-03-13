@@ -15,13 +15,9 @@ class Wheel
         int get_motor_speed(int16_t stick_value);
 
     public:
-        Wheel(int pin)
-            : _pin(pin)
-        {
-            _wheel.attach(pin, 1000, 2000);
-            _wheel.write(OFF_ANGLE);
-        }
+        Wheel() {}
 
+        void begin(int pin);
         void shutdown();
         void set_speed(int16_t speed);
 };

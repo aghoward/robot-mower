@@ -2,6 +2,13 @@
 
 #include "wheel.h"
 
+void Wheel::begin(int pin)
+{
+    _pin = pin;
+    _wheel.attach(pin, 1000, 2000);
+    _wheel.write(OFF_ANGLE);
+}
+
 void Wheel::shutdown()
 {
     _wheel.write(OFF_ANGLE);

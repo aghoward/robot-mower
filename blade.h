@@ -10,14 +10,9 @@ class Blade
         Servo _blade;
 
     public:
-        Blade(int pin)
-            : _spinning(false),
-              _blade()
-        {
-            _blade.attach(pin, 1000, 2000);
-            _blade.write(0);
-        }
+        Blade() {}
 
+        void begin(int pin);
         void shutdown();
         void handle(bool state_changed);
 };

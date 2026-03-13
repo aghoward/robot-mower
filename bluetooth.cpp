@@ -23,17 +23,19 @@ namespace bt
         return true;
     }
 
-    Bluetooth::Bluetooth(void (*shutdown)())
-            : 
-            _connection_timer(timer_create_default()),
-            _shutdown(shutdown)
-        {
-            pinMode(BLUETOOTH_STATE_PIN, INPUT);
-            attachInterrupt(digitalPinToInterrupt(BLUETOOTH_STATE_PIN), bt::bluetooth_connection_changed, CHANGE);
-            _connection_timer.every(500, check_packets_received, this);
-            Serial.begin(115200);
-            while (!Serial || !_connected) {}
-        }
+    void Bluetooth::begin(void (*shutdown)())
+    {
+        pinMode(BLUETOOTH_STATE_PIN, INPUT);
+        attachInterrupt(digitalPinToInterrupt(BLUETOOTH_STATE_PIN), bt::bluetooth_connection_changed, CHANGE);
+
+        _shutdown = shutdown;
+
+        _connection_timer = timer_create_default();
+        _connection_timer.every(500, check_packets_received);
+
+        Serial.begin(115200);
+        while (!Serial || !_connected) {}
+    }
 
     bool Bluetooth::is_connected()
     {
