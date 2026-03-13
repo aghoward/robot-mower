@@ -39,7 +39,7 @@ namespace bt
 
     bool Bluetooth::is_connected()
     {
-        return _connected && (_last_packet_checked != _last_packet_received);
+        return _connected && _packets_received;
     }
 
     void Bluetooth::check_connection()

@@ -13,7 +13,7 @@ namespace bt
 
     class Bluetooth {
     private:
-        Timer<16, millis> _connection_timer;
+        Timer<> _connection_timer;
 
         void (*_shutdown) ();
 
