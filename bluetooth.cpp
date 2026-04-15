@@ -51,28 +51,34 @@ namespace bt
 
     void Bluetooth::wait_packet_available()
     {
-        auto available = false;
-        while (!available){
-            check_connection();
-            for (auto byte_read = Serial.read(); byte_read != 0xaa; byte_read = Serial.read())
+        char buffer[sizeof(RadioPacket)];
+        bool available = false;
+        while (!available) {
+            while (Serial.available() < sizeof(RadioPacket))
+                check_connection();
+            for (auto byte_read = Serial.read(); byte_read != (PACKET_HEADER & 0xFF); byte_read = Serial.read())
                 if (byte_read == -1)
                     check_connection();
             while (!Serial.available())
                 check_connection();
-            if (Serial.read() != 0x55)
+            if (Serial.read() != ((PACKET_HEADER >> 8) & 0xFF))
                 continue;
-            while (Serial.available() < sizeof(RadioPacket))
+            while (Serial.available() < (sizeof(RadioPacket) - sizeof(int16_t)))
                 check_connection();
             available = true;
         }
+
         _last_packet_received++;
     }
 
     RadioPacket Bluetooth::read_packet()
     {
-        wait_packet_available();
         RadioPacket packet;
-        Serial.readBytes(reinterpret_cast<uint8_t*>(&packet), sizeof(packet));
+        while (packet.checksum != calculate_checksum(packet))
+        {
+            wait_packet_available();
+            Serial.readBytes(reinterpret_cast<uint8_t*>(&packet.left_x), sizeof(packet) - 2);
+        }
         return packet;
     }
 }
