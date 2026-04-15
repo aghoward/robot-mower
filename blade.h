@@ -7,6 +7,7 @@ class Blade
 {
     private:
         bool _spinning;
+        uint16_t _speed;
         Servo _blade;
 
     public:
