@@ -465,7 +465,7 @@ CSTANDARD =	-std=gnu99
 # gnu++98 - c++98 plus GNU extensions (default for C++)
 # c++0x   - working draft of upcoming ISO C++0x standard; experimental
 # gnu++0x - c++0x plus GNU extensions
-CXXSTANDARD =	-std=c++17
+CXXSTANDARD =	-std=c++20
 
 # Optimisations.
 #OPT_OPTIMS =	-O3
