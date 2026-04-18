@@ -53,21 +53,25 @@ namespace bt
     {
         char buffer[sizeof(RadioPacket)];
         bool available = false;
-        while (!available) {
+        while (!available)
+        {
             while (Serial.available() < sizeof(RadioPacket))
                 check_connection();
-            for (auto byte_read = Serial.read(); byte_read != (PACKET_HEADER & 0xFF); byte_read = Serial.read())
-                if (byte_read == -1)
-                    check_connection();
-            while (!Serial.available())
-                check_connection();
-            if (Serial.read() != ((PACKET_HEADER >> 8) & 0xFF))
+            auto bytes_read = 0;
+            auto byte_received = 0;
+            while (byte_received != ((PACKET_HEADER >> 8) & 0xFF) && bytes_read < sizeof(RadioPacket))
+            {
+                byte_received = Serial.read();
+                buffer[bytes_read++] = byte_received;
+            }
+            if (bytes_read < 2)
+              continue;
+            if (buffer[bytes_read - 2] != (PACKET_HEADER & 0xFF))
                 continue;
             while (Serial.available() < (sizeof(RadioPacket) - sizeof(int16_t)))
                 check_connection();
             available = true;
         }
-
         _last_packet_received++;
     }
 
